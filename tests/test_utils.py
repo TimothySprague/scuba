@@ -1,6 +1,5 @@
 from __future__ import print_function
 
-from nose.tools import *
 from unittest import TestCase
 try:
     from unittest import mock
@@ -74,7 +73,8 @@ class TestUtils(TestCase):
 
     def test_mkdir_p_fail_exist(self):
         '''mkdir_p fails when expected'''
-        assert_raises(OSError, scuba.utils.mkdir_p, '/dev/null')
+        with self.assertRaises(OSError):
+            scuba.utils.mkdir_p('/dev/null')
 
 
     def test_parse_env_var(self):
