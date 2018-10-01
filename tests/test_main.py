@@ -1,6 +1,5 @@
 from __future__ import print_function
 
-from nose.tools import *
 from .utils import *
 from unittest import TestCase
 try:
@@ -78,7 +77,7 @@ class TestMain(TmpDirTestCase):
                         logging.info('scuba stderr:\n' + stderr_data)
 
                         # Verify the return value was as expected
-                        assert_equal(exp_retval, retcode)
+                        self.assertEqual(exp_retval, retcode)
 
                         return stdout_data, stderr_data
 
@@ -176,7 +175,7 @@ class TestMain(TmpDirTestCase):
         assert_startswith(check, 'scuba')
 
         ver = check.split()[1]
-        assert_equal(ver, scuba.__version__)
+        self.assertEqual(ver, scuba.__version__)
 
 
     def test_no_docker(self):
@@ -206,7 +205,7 @@ class TestMain(TmpDirTestCase):
 
         _, err = self.run_scuba(args, 42)
 
-        assert_false(subproc_call_mock.called)
+        self.assertFalse(subproc_call_mock.called)
 
         #TODO: Assert temp files are not cleaned up?
 
@@ -240,8 +239,8 @@ class TestMain(TmpDirTestCase):
         self.run_scuba(['/bin/touch', filename])
 
         st = os.stat(filename)
-        assert_equal(st.st_uid, os.getuid())
-        assert_equal(st.st_gid, os.getgid())
+        self.assertEqual(st.st_uid, os.getuid())
+        self.assertEqual(st.st_gid, os.getgid())
 
 
     def _setup_test_tty(self):
@@ -299,10 +298,10 @@ class TestMain(TmpDirTestCase):
 
         uid, username, gid, groupname = self._test_user()
 
-        assert_equal(uid, os.getuid())
-        assert_equal(username, scuba.constants.SCUBA_USER)
-        assert_equal(gid, os.getgid())
-        assert_equal(groupname, scuba.constants.SCUBA_GROUP)
+        self.assertEqual(uid, os.getuid())
+        self.assertEqual(username, scuba.constants.SCUBA_USER)
+        self.assertEqual(gid, os.getgid())
+        self.assertEqual(groupname, scuba.constants.SCUBA_GROUP)
 
 
     def test_user_root(self):
@@ -310,10 +309,10 @@ class TestMain(TmpDirTestCase):
 
         uid, username, gid, groupname = self._test_user(['-r'])
 
-        assert_equal(uid, 0)
-        assert_equal(username, 'root')
-        assert_equal(gid, 0)
-        assert_equal(groupname, 'root')
+        self.assertEqual(uid, 0)
+        self.assertEqual(username, 'root')
+        self.assertEqual(gid, 0)
+        self.assertEqual(groupname, 'root')
     
 
     def _test_home_writable(self, scuba_args=[]):
@@ -563,8 +562,8 @@ class TestMain(TmpDirTestCase):
         out = out.splitlines()
 
         uid, gid = map(int, out[0].split())
-        assert_equal(exp_uid, uid)
-        assert_equal(exp_gid, gid)
+        self.assertEqual(exp_uid, uid)
+        self.assertEqual(exp_gid, gid)
 
         assert_str_equalish(out[1], 'success')
 
@@ -683,6 +682,6 @@ class TestMain(TmpDirTestCase):
         out, err = self.run_scuba(['--list-aliases'])
         lines = out.splitlines()
 
-        assert_equal(len(expected), len(lines))
+        self.assertEqual(len(expected), len(lines))
         for i in range(len(expected)):
             assert_seq_equal(expected[i], lines[i].split('\t'))
