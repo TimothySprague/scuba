@@ -1,6 +1,5 @@
 import os
 import sys
-from nose.tools import *
 from os.path import normpath
 import tempfile
 import shutil
@@ -12,26 +11,17 @@ except ImportError:
     import mock
 
 
-def assert_set_equal(a, b):
-    assert_equal(set(a), set(b))
-
 def assert_seq_equal(a, b):
-    assert_equals(list(a), list(b))
+    assert list(a) == list(b)
 
 def assert_paths_equal(a, b):
-    assert_equals(normpath(a), normpath(b))
+    assert normpath(a) == normpath(b)
 
 def assert_str_equalish(exp, act):
-    exp = str(exp).strip()
-    act = str(act).strip()
-    assert_equal(exp, act)
+    assert str(exp).strip() == str(act).strip()
 
 def assert_startswith(s, prefix):
-    s = str(s)
-    prefix = str(prefix)
-    if not s.startswith(prefix):
-        raise AssertionError('"{}" does not start with "{}"'
-                .format(escape_str(s), prefix))
+    assert str(s).startswith(str(prefix))
 
 def escape_str(s):
     # Python 3 won't let us use s.encode('string_escape') :-(
