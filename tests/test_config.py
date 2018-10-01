@@ -1,7 +1,6 @@
  # coding=utf-8
 from __future__ import print_function
 
-from nose.tools import *
 from .utils import *
 from unittest import TestCase
 
@@ -19,7 +18,7 @@ class TestCommonScriptSchema(TmpDirTestCase):
         '''Simple form: value is a string'''
         node = 'foo'
         result = scuba.config._process_script_node(node, 'dontcare')
-        assert_equals(result, ['foo'])
+        assert_seq_equal(result, ['foo'])
 
     def test_script_key_string(self):
         '''Value is a mapping: script is a string'''
@@ -28,7 +27,7 @@ class TestCommonScriptSchema(TmpDirTestCase):
             otherkey = 'other',
         )
         result = scuba.config._process_script_node(node, 'dontcare')
-        assert_equals(result, ['foo'])
+        assert_seq_equal(result, ['foo'])
 
     def test_script_key_list(self):
         '''Value is a mapping: script is a list'''
@@ -40,7 +39,7 @@ class TestCommonScriptSchema(TmpDirTestCase):
             otherkey = 'other',
         )
         result = scuba.config._process_script_node(node, 'dontcare')
-        assert_equals(result, ['foo', 'bar'])
+        assert_seq_equal(result, ['foo', 'bar'])
 
     def test_script_key_mapping_invalid(self):
         '''Value is a mapping: script is a mapping (invalid)'''
@@ -49,8 +48,9 @@ class TestCommonScriptSchema(TmpDirTestCase):
                 whatisthis = 'idontknow',
             ),
         )
-        assert_raises(scuba.config.ConfigError,
-                scuba.config._process_script_node, node, 'dontcare')
+
+        with self.assertRaises(scuba.config.ConfigError):
+            scuba.config._process_script_node(node, 'dontcare')
 
 
 class TestConfig(TmpDirTestCase):
@@ -103,7 +103,8 @@ class TestConfig(TmpDirTestCase):
 
     def test_find_config_nonexist(self):
         '''find_config raises ConfigError if the config cannot be found'''
-        assert_raises(scuba.config.ConfigError, scuba.config.find_config)
+        with self.assertRaises(scuba.config.ConfigError):
+            scuba.config.find_config()
 
     ######################################################################
     # Load config
@@ -113,7 +114,8 @@ class TestConfig(TmpDirTestCase):
         with open('.scuba.yml', 'w') as f:
             pass
 
-        assert_raises(scuba.config.ConfigError, scuba.config.load_config, '.scuba.yml')
+        with self.assertRaises(scuba.config.ConfigError):
+            scuba.config.load_config('.scuba.yml')
 
     def test_load_unexpected_node(self):
         '''load_config raises ConfigError on unexpected config node'''
@@ -121,7 +123,8 @@ class TestConfig(TmpDirTestCase):
             f.write('image: busybox\n')
             f.write('unexpected_node_123456: value\n')
 
-        assert_raises(scuba.config.ConfigError, scuba.config.load_config, '.scuba.yml')
+        with self.assertRaises(scuba.config.ConfigError):
+            scuba.config.load_config('.scuba.yml')
 
     def test_load_config_minimal(self):
         '''load_config loads a minimal config'''
@@ -129,7 +132,7 @@ class TestConfig(TmpDirTestCase):
             f.write('image: busybox\n')
 
         config = scuba.config.load_config('.scuba.yml')
-        assert_equals(config.image, 'busybox')
+        self.assertEqual(config.image, 'busybox')
 
     def test_load_config_with_aliases(self):
         '''load_config loads a config with aliases'''
@@ -140,8 +143,8 @@ class TestConfig(TmpDirTestCase):
             f.write('  snap: crackle pop\n')
 
         config = scuba.config.load_config('.scuba.yml')
-        assert_equals(config.image, 'busybox')
-        assert_equals(len(config.aliases), 2)
+        self.assertEqual(config.image, 'busybox')
+        self.assertEqual(len(config.aliases), 2)
         assert_seq_equal(config.aliases['foo'].script, ['bar'])
         assert_seq_equal(config.aliases['snap'].script, ['crackle pop'])
 
@@ -152,7 +155,8 @@ class TestConfig(TmpDirTestCase):
             f.write('aliases:\n')
             f.write('  this has spaces: whatever\n')
 
-        assert_raises(scuba.config.ConfigError, scuba.config.load_config, '.scuba.yml')
+        with self.assertRaises(scuba.config.ConfigError):
+            scuba.config.load_config('.scuba.yml')
 
     def test_load_config_image_from_yaml(self):
         '''load_config loads a config using !from_yaml'''
@@ -163,7 +167,7 @@ class TestConfig(TmpDirTestCase):
             f.write('image: !from_yaml .gitlab.yml image\n')
 
         config = scuba.config.load_config('.scuba.yml')
-        assert_equals(config.image, 'debian:8.2')
+        self.assertEqual(config.image, 'debian:8.2')
 
     def test_load_config_image_from_yaml_nested_keys(self):
         '''load_config loads a config using !from_yaml with nested keys'''
@@ -176,7 +180,7 @@ class TestConfig(TmpDirTestCase):
             f.write('image: !from_yaml .gitlab.yml somewhere.down.here\n')
 
         config = scuba.config.load_config('.scuba.yml')
-        assert_equals(config.image, 'debian:8.2')
+        self.assertEqual(config.image, 'debian:8.2')
 
     def test_load_config_image_from_yaml_nested_key_missing(self):
         '''load_config raises ConfigError when !from_yaml references nonexistant key'''
@@ -187,21 +191,24 @@ class TestConfig(TmpDirTestCase):
         with open('.scuba.yml', 'w') as f:
             f.write('image: !from_yaml .gitlab.yml somewhere.NONEXISTANT\n')
 
-        assert_raises(scuba.config.ConfigError, scuba.config.load_config, '.scuba.yml')
+        with self.assertRaises(scuba.config.ConfigError):
+            scuba.config.load_config('.scuba.yml')
 
     def test_load_config_image_from_yaml_missing_file(self):
         '''load_config raises ConfigError when !from_yaml references nonexistant file'''
         with open('.scuba.yml', 'w') as f:
             f.write('image: !from_yaml .NONEXISTANT.yml image\n')
 
-        assert_raises(scuba.config.ConfigError, scuba.config.load_config, '.scuba.yml')
+        with self.assertRaises(scuba.config.ConfigError):
+            scuba.config.load_config('.scuba.yml')
 
     def test_load_config_image_from_yaml_unicode_args(self):
         '''load_config raises ConfigError when !from_yaml has unicode args'''
         with open('.scuba.yml', 'w') as f:
             f.write('image: !from_yaml .NONEXISTANT.yml ½\n')
 
-        assert_raises(scuba.config.ConfigError, scuba.config.load_config, '.scuba.yml')
+        with self.assertRaises(scuba.config.ConfigError):
+            scuba.config.load_config('.scuba.yml')
 
     def test_load_config_image_from_yaml_missing_arg(self):
         '''load_config raises ConfigError when !from_yaml has missing args'''
@@ -211,7 +218,8 @@ class TestConfig(TmpDirTestCase):
         with open('.scuba.yml', 'w') as f:
             f.write('image: !from_yaml .gitlab.yml\n')
 
-        assert_raises(scuba.config.ConfigError, scuba.config.load_config, '.scuba.yml')
+        with self.assertRaises(scuba.config.ConfigError):
+            scuba.config.load_config('.scuba.yml')
 
     ######################################################################
     # process_command
@@ -226,8 +234,8 @@ class TestConfig(TmpDirTestCase):
                 entrypoint = entrypoint,
                 )
         result = cfg.process_command([])
-        assert_equal(result.image, image_name)
-        assert_equal(result.entrypoint, entrypoint)
+        self.assertEqual(result.image, image_name)
+        self.assertEqual(result.entrypoint, entrypoint)
 
     def test_process_command_empty(self):
         '''process_command handles no aliases and an empty command'''
@@ -235,7 +243,7 @@ class TestConfig(TmpDirTestCase):
                 image = 'na',
                 )
         result = cfg.process_command([])
-        assert_equal(result.script, None)
+        self.assertEqual(result.script, None)
 
 
     def test_process_command_no_aliases(self):
@@ -244,8 +252,8 @@ class TestConfig(TmpDirTestCase):
                 image = 'na',
                 )
         result = cfg.process_command(['cmd', 'arg1', 'arg2'])
-        assert_equal(len(result.script), 1)
-        assert_equal(shlex.split(result.script[0]), ['cmd', 'arg1', 'arg2'])
+        self.assertEqual(len(result.script), 1)
+        self.assertEqual(shlex.split(result.script[0]), ['cmd', 'arg1', 'arg2'])
 
     def test_process_command_aliases_unused(self):
         '''process_command handles unused aliases'''
@@ -257,8 +265,8 @@ class TestConfig(TmpDirTestCase):
                     ),
                 )
         result = cfg.process_command(['cmd', 'arg1', 'arg2'])
-        assert_equal(len(result.script), 1)
-        assert_equal(shlex.split(result.script[0]), ['cmd', 'arg1', 'arg2'])
+        self.assertEqual(len(result.script), 1)
+        self.assertEqual(shlex.split(result.script[0]), ['cmd', 'arg1', 'arg2'])
 
     def test_process_command_aliases_used_noargs(self):
         '''process_command handles aliases with no args'''
@@ -270,8 +278,8 @@ class TestConfig(TmpDirTestCase):
                     ),
                 )
         result = cfg.process_command(['apple', 'arg1', 'arg2'])
-        assert_equal(len(result.script), 1)
-        assert_equal(shlex.split(result.script[0]), ['banana', 'arg1', 'arg2'])
+        self.assertEqual(len(result.script), 1)
+        self.assertEqual(shlex.split(result.script[0]), ['banana', 'arg1', 'arg2'])
 
     def test_process_command_aliases_used_withargs(self):
         '''process_command handles aliases with args'''
@@ -283,8 +291,8 @@ class TestConfig(TmpDirTestCase):
                     ),
                 )
         result = cfg.process_command(['apple', 'arg1', 'arg2 with spaces'])
-        assert_equal(len(result.script), 1)
-        assert_equal(shlex.split(result.script[0]), ['banana', 'cherry', 'pie is good', 'arg1', 'arg2 with spaces'])
+        self.assertEqual(len(result.script), 1)
+        self.assertEqual(shlex.split(result.script[0]), ['banana', 'cherry', 'pie is good', 'arg1', 'arg2 with spaces'])
 
     def test_process_command_multiline_aliases_used(self):
         '''process_command handles multiline aliases'''
@@ -299,9 +307,9 @@ class TestConfig(TmpDirTestCase):
                     ),
                 )
         result = cfg.process_command(['apple'])
-        assert_equal(len(result.script), 2)
-        assert_equal(shlex.split(result.script[0]), ['banana', 'cherry', 'pie is good'])
-        assert_equal(shlex.split(result.script[1]), ['so', 'is', 'peach'])
+        self.assertEqual(len(result.script), 2)
+        self.assertEqual(shlex.split(result.script[0]), ['banana', 'cherry', 'pie is good'])
+        self.assertEqual(shlex.split(result.script[1]), ['so', 'is', 'peach'])
 
     def test_process_command_multiline_aliases_forbid_user_args(self):
         '''process_command raises ConfigError when args are specified with multiline aliases'''
@@ -315,7 +323,8 @@ class TestConfig(TmpDirTestCase):
                     cat = 'dog',
                     ),
                 )
-        assert_raises(scuba.config.ConfigError, cfg.process_command, ['apple', 'ARGS', 'NOT ALLOWED'])
+        with self.assertRaises(scuba.config.ConfigError):
+            cfg.process_command(['apple', 'ARGS', 'NOT ALLOWED'])
 
     def test_process_command_alias_overrides_image(self):
         '''aliases can override the image'''
@@ -332,7 +341,7 @@ class TestConfig(TmpDirTestCase):
                 ),
             )
         result = cfg.process_command(['apple'])
-        assert_equal(result.image, 'overridden')
+        self.assertEqual(result.image, 'overridden')
 
     def test_process_command_alias_overrides_image_and_entrypoint(self):
         '''aliases can override the image and entrypoint'''
@@ -351,8 +360,8 @@ class TestConfig(TmpDirTestCase):
                 ),
             )
         result = cfg.process_command(['apple'])
-        assert_equal(result.image, 'overridden')
-        assert_equal(result.entrypoint, 'overridden_entrypoint')
+        self.assertEqual(result.image, 'overridden')
+        self.assertEqual(result.entrypoint, 'overridden_entrypoint')
 
     def test_process_command_alias_overrides_image_and_empty_entrypoint(self):
         '''aliases can override the image and empty/null entrypoint'''
@@ -371,8 +380,8 @@ class TestConfig(TmpDirTestCase):
                 ),
             )
         result = cfg.process_command(['apple'])
-        assert_equal(result.image, 'overridden')
-        assert_equal(result.entrypoint, '')
+        self.assertEqual(result.image, 'overridden')
+        self.assertEqual(result.entrypoint, '')
 
 
     ############################################################################
@@ -412,7 +421,8 @@ class TestConfig(TmpDirTestCase):
                     - a 'script'
                 ''')
 
-        assert_raises(scuba.config.ConfigError, scuba.config.load_config, '.scuba.yml')
+        with self.assertRaises(scuba.config.ConfigError):
+            scuba.config.load_config('.scuba.yml')
 
     def test_hooks_missing_script(self):
         '''hooks with dict, but missing "script" are invalid'''
@@ -424,7 +434,8 @@ class TestConfig(TmpDirTestCase):
                     not_script: missing "script" key
                 ''')
 
-        assert_raises(scuba.config.ConfigError, scuba.config.load_config, '.scuba.yml')
+        with self.assertRaises(scuba.config.ConfigError):
+            scuba.config.load_config('.scuba.yml')
 
 
     ############################################################################
